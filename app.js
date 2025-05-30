@@ -1,5 +1,5 @@
 // 配置
-const API_BASE_URL = 'http://localhost:5000';  // 开发时使用本地地址
+const API_BASE_URL = 'https://your-ngrok-url.ngrok.io';  // 替换为您的 ngrok URL
 const UPDATE_INTERVAL = 1000;  // 数据更新间隔（毫秒）
 
 // 状态变量
