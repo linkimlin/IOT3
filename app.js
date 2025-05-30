@@ -1,6 +1,6 @@
 // 配置
 // const API_BASE_URL = 'http://localhost:5000';  // 本地开发时使用
-const API_BASE_URL ='https://c4b9-124-64-23-130.ngrok-free.app';  // ngrok URL
+const API_BASE_URL = 'https://c4b9-124-64-23-130.ngrok-free.app';  // ngrok URL
 const UPDATE_INTERVAL = 1000;  // 数据更新间隔（毫秒）
 
 // 状态变量
@@ -20,7 +20,10 @@ const elements = {
 
 // 更新连接状态显示
 function updateConnectionStatus(connected) {
-    if (!elements.connectionStatus) return;
+    if (!elements.connectionStatus) {
+        console.warn('Connection status element not found');
+        return;
+    }
     
     isConnected = connected;
     const statusIcon = elements.connectionStatus.querySelector('i');
@@ -37,29 +40,36 @@ function updateConnectionStatus(connected) {
 
 // 更新传感器数据显示
 function updateSensorDisplay(data) {
-    if (!data) return;
-    
-    if (elements.temperature) elements.temperature.textContent = data.temperature?.toFixed(1) || '--';
-    if (elements.humidity) elements.humidity.textContent = data.humidity?.toFixed(1) || '--';
-    if (elements.light) elements.light.textContent = data.light || '--';
-    
-    // 更新窗帘状态
-    if (elements.curtainProgress && elements.curtainCountdown) {
-        if (data.curtain_limit_time) {
-            const progress = (data.curtain_state === 'opening' || data.curtain_state === 'closing') 
-                ? (data.curtain_state === 'opening' ? 100 : 0)
-                : 50;
-            elements.curtainProgress.style.width = `${progress}%`;
-            elements.curtainCountdown.textContent = `倒计时: ${data.curtain_limit_time.toFixed(1)}秒 [${progress}%]`;
-        } else {
-            elements.curtainProgress.style.width = '0%';
-            elements.curtainCountdown.textContent = '倒计时: -- [--%]';
-        }
+    if (!data) {
+        console.warn('No data received');
+        return;
     }
     
-    // 更新自动模式状态
-    if (elements.autoMode) {
-        elements.autoMode.checked = data.auto || false;
+    try {
+        if (elements.temperature) elements.temperature.textContent = data.temperature?.toFixed(1) || '--';
+        if (elements.humidity) elements.humidity.textContent = data.humidity?.toFixed(1) || '--';
+        if (elements.light) elements.light.textContent = data.light || '--';
+        
+        // 更新窗帘状态
+        if (elements.curtainProgress && elements.curtainCountdown) {
+            if (data.curtain_limit_time) {
+                const progress = (data.curtain_state === 'opening' || data.curtain_state === 'closing') 
+                    ? (data.curtain_state === 'opening' ? 100 : 0)
+                    : 50;
+                elements.curtainProgress.style.width = `${progress}%`;
+                elements.curtainCountdown.textContent = `倒计时: ${data.curtain_limit_time.toFixed(1)}秒 [${progress}%]`;
+            } else {
+                elements.curtainProgress.style.width = '0%';
+                elements.curtainCountdown.textContent = '倒计时: -- [--%]';
+            }
+        }
+        
+        // 更新自动模式状态
+        if (elements.autoMode) {
+            elements.autoMode.checked = data.auto || false;
+        }
+    } catch (error) {
+        console.error('Error updating display:', error);
     }
 }
 
@@ -91,7 +101,13 @@ async function sendCommand(command) {
 // 定期更新数据
 async function updateData() {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/sensor_data`);
+        const response = await fetch(`${API_BASE_URL}/api/sensor_data`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+        
         if (!response.ok) {
             throw new Error('获取数据失败');
         }
