@@ -1,5 +1,6 @@
 // 配置
-const API_BASE_URL = 'https://your-ngrok-url.ngrok.io';  // 替换为您的 ngrok URL
+// const API_BASE_URL = 'http://localhost:5000';  // 本地开发时使用
+const API_BASE_URL = 'https://1f16-124-64-23-130.ngrok-free.app';  // ngrok URL
 const UPDATE_INTERVAL = 1000;  // 数据更新间隔（毫秒）
 
 // 状态变量
@@ -19,6 +20,8 @@ const elements = {
 
 // 更新连接状态显示
 function updateConnectionStatus(connected) {
+    if (!elements.connectionStatus) return;
+    
     isConnected = connected;
     const statusIcon = elements.connectionStatus.querySelector('i');
     const statusText = elements.connectionStatus.querySelector('span');
@@ -34,24 +37,30 @@ function updateConnectionStatus(connected) {
 
 // 更新传感器数据显示
 function updateSensorDisplay(data) {
-    elements.temperature.textContent = data.temperature.toFixed(1);
-    elements.humidity.textContent = data.humidity.toFixed(1);
-    elements.light.textContent = data.light;
+    if (!data) return;
+    
+    if (elements.temperature) elements.temperature.textContent = data.temperature?.toFixed(1) || '--';
+    if (elements.humidity) elements.humidity.textContent = data.humidity?.toFixed(1) || '--';
+    if (elements.light) elements.light.textContent = data.light || '--';
     
     // 更新窗帘状态
-    if (data.curtain_limit_time) {
-        const progress = (data.curtain_state === 'opening' || data.curtain_state === 'closing') 
-            ? (data.curtain_state === 'opening' ? 100 : 0)
-            : 50;
-        elements.curtainProgress.style.width = `${progress}%`;
-        elements.curtainCountdown.textContent = `倒计时: ${data.curtain_limit_time.toFixed(1)}秒 [${progress}%]`;
-    } else {
-        elements.curtainProgress.style.width = '0%';
-        elements.curtainCountdown.textContent = '倒计时: -- [--%]';
+    if (elements.curtainProgress && elements.curtainCountdown) {
+        if (data.curtain_limit_time) {
+            const progress = (data.curtain_state === 'opening' || data.curtain_state === 'closing') 
+                ? (data.curtain_state === 'opening' ? 100 : 0)
+                : 50;
+            elements.curtainProgress.style.width = `${progress}%`;
+            elements.curtainCountdown.textContent = `倒计时: ${data.curtain_limit_time.toFixed(1)}秒 [${progress}%]`;
+        } else {
+            elements.curtainProgress.style.width = '0%';
+            elements.curtainCountdown.textContent = '倒计时: -- [--%]';
+        }
     }
     
     // 更新自动模式状态
-    elements.autoMode.checked = data.auto;
+    if (elements.autoMode) {
+        elements.autoMode.checked = data.auto || false;
+    }
 }
 
 // 发送控制命令
@@ -97,9 +106,11 @@ async function updateData() {
 }
 
 // 自动模式切换处理
-elements.autoMode.addEventListener('change', function() {
-    sendCommand('H');
-});
+if (elements.autoMode) {
+    elements.autoMode.addEventListener('change', function() {
+        sendCommand('H');
+    });
+}
 
 // 启动数据更新
 function startDataUpdate() {
